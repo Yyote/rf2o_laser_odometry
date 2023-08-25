@@ -33,6 +33,7 @@ public:
   void publish();
 
   bool setLaserPoseFromTf();
+  bool laser_pose_set;
 
 public:
 
@@ -68,6 +69,8 @@ CLaserOdometry2DNode::CLaserOdometry2DNode() :
   CLaserOdometry2D()
 {
   ROS_INFO("Initializing RF2O node...");
+  
+  laser_pose_set = false;
 
   //Read Parameters
   //----------------
@@ -104,7 +107,7 @@ CLaserOdometry2DNode::CLaserOdometry2DNode() :
     initial_robot_pose.pose.pose.orientation.z = 0;
   }
 
-  setLaserPoseFromTf();
+  //setLaserPoseFromTf();
 
   //Init variables
   module_initialized = false;
@@ -123,6 +126,7 @@ bool CLaserOdometry2DNode::setLaserPoseFromTf()
   transform.setIdentity();
   try
   {
+    tf_listener.waitForTransform("/base_footprint","/laser_frame", ros::Time(), ros::Duration(5.0));
     tf_listener.lookupTransform(base_frame_id, last_scan.header.frame_id, ros::Time(0), transform);
     retrieved = true;
   }
@@ -199,6 +203,11 @@ void CLaserOdometry2DNode::LaserCallBack(const sensor_msgs::LaserScan::ConstPtr&
       init(last_scan, initial_robot_pose.pose.pose);
       first_laser_scan = false;
     }
+  }
+  if (!laser_pose_set)
+  {
+     setLaserPoseFromTf();
+     laser_pose_set = true;
   }
 }
 
